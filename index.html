@@ -77,23 +77,26 @@
             const [error, setError] = useState(null);
             const [activeModalTab, setActiveModalTab] = useState('info'); // info | security | install
             
-            // Custom Parser Implementation (Reads custom '<' and '-' syntax from user specification)
+            // Custom Parser Implementation (Reads custom '<', '>', and '-' syntax from user specification)
             const parseCustomConfig = (text) => {
                 // STRIP UTF-8 BOM if present (Crucial fix for Windows-saved files)
                 const cleanText = text.replace(/^\uFEFF/, '');
                 const lines = cleanText.split('\n').map(line => line.replace(/\r$/, '')); // Clear Windows carriage returns
                 
-                // Find start marker
+                // Find start marker (Support both < and > to prevent any syntax mismatch)
                 let startIndex = -1;
+                let marker = '';
                 for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].trim() === '<') {
+                    const trimmed = lines[i].trim();
+                    if (trimmed === '<' || trimmed === '>') {
                         startIndex = i;
+                        marker = trimmed;
                         break;
                     }
                 }
 
                 if (startIndex === -1) {
-                    throw new Error("קובץ הנתונים חייב להתחיל בסימן '<' בשורה נפרדת.");
+                    throw new Error("קובץ הנתונים חייב להתחיל בסימן '<' או '>' בשורה נפרדת.");
                 }
 
                 const result = [];
@@ -104,8 +107,8 @@
                     const rawLine = lines[i];
                     const trimmedLine = rawLine.trim();
 
-                    // Check for final end of config
-                    if (trimmedLine === '<') {
+                    // Check for final end of config using the matched marker
+                    if (trimmedLine === marker) {
                         if (currentItem && currentItem.name) {
                             result.push(currentItem);
                         }
@@ -131,7 +134,7 @@
                             downloadUrl: '',
                             imageName: '',
                             description: [],
-                            sha256: generateFakeSHA(rawLine || 'App'),
+                            sha256: '',
                             version: '2.0.1-Stable',
                             downloads: Math.floor(Math.random() * (9500 - 450) + 450)
                         };
@@ -139,9 +142,11 @@
                     }
 
                     if (step === 0) {
-                        currentItem.name = rawLine;
-                        currentItem.sha256 = generateFakeSHA(rawLine);
-                        step = 1;
+                        if (rawLine) {
+                            currentItem.name = rawLine;
+                            currentItem.sha256 = generateFakeSHA(rawLine);
+                            step = 1;
+                        }
                     } else if (step === 1) {
                         currentItem.downloadUrl = trimmedLine;
                         step = 2;
@@ -227,7 +232,7 @@
                         setError(null);
                         setLoading(false);
                     } catch (err) {
-                        alert('שגיאה בניתוח קובץ ה-JSON הידני: ' + err.message);
+                        setError('שגיאה בניתוח קובץ ה-JSON היดני: ' + err.message);
                     }
                 };
                 reader.readAsText(file);
