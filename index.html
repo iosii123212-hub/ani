@@ -79,7 +79,9 @@
             
             // Custom Parser Implementation (Reads custom '<' and '-' syntax from user specification)
             const parseCustomConfig = (text) => {
-                const lines = text.split('\n').map(line => line.replace(/\r$/, '')); // Clear Windows carriage returns
+                // STRIP UTF-8 BOM if present (Crucial fix for Windows-saved files)
+                const cleanText = text.replace(/^\uFEFF/, '');
+                const lines = cleanText.split('\n').map(line => line.replace(/\r$/, '')); // Clear Windows carriage returns
                 
                 // Find start marker
                 let startIndex = -1;
@@ -177,10 +179,14 @@
 
             // Fetch and parse the 1.json file
             useEffect(() => {
-                fetch('1.json')
+                // Fetch with a cache-buster timestamp to completely bypass GitHub Pages' aggressive caching
+                fetch('./1.json?t=' + Date.now())
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('לא נמצא קובץ נתונים בשם 1.json ליד דף ה-HTML.');
+                            if (response.status === 404) {
+                                throw new Error('קובץ 1.json לא נמצא בשרת (שגיאה 404). ודא שהעלית אותו ל-GitHub באותה תיקייה בדיוק.');
+                            }
+                            throw new Error(`לא ניתן לטעון את קובץ הנתונים (קוד שגיאה: ${response.status}).`);
                         }
                         return response.text();
                     })
@@ -188,15 +194,22 @@
                         try {
                             const parsedData = parseCustomConfig(text);
                             setApps(parsedData);
+                            setError(null);
                             setLoading(false);
                         } catch (e) {
-                            setError('שגיאה בניתוח הפורמט של קובץ 1.json: ' + e.message);
+                            setError('שגיאה בניתוח תוכן הקובץ 1.json: ' + e.message);
                             setLoading(false);
                         }
                     })
                     .catch(err => {
-                        // Keep track of CORS / Local environment errors to show the clean Matte manual loader
-                        setError('חסימת דפדפן מקומי (CORS) או קובץ חסר. אנא טען את קובץ ה-1.json שלך ידנית למטה.');
+                        console.error("Fetch Error details:", err);
+                        
+                        // Check if we are running locally under file:// protocol
+                        if (window.location.protocol === 'file:') {
+                            setError('חסימת דפדפן מקומי (CORS). דפדפנים חוסמים קריאת קבצים מקומיים ללא שרת. אנא השתמש בלחצן הידני למטה כדי לטעון את 1.json, או העלה את התיקייה ל-GitHub.');
+                        } else {
+                            setError(err.message || 'שגיאה לא ידועה בטעינת קובץ 1.json.');
+                        }
                         setLoading(false);
                     });
             }, []);
@@ -242,7 +255,6 @@
             return (
                 <div className="flex flex-col min-h-screen">
                     
-                    {}
                     {/* Official Matte Dark Header */}
                     <header className="border-b border-zinc-800 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-40">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -269,7 +281,6 @@
                         </div>
                     </header>
 
-                    {}
                     {/* Clean Typographic Matte Hero Section */}
                     <div className="border-b border-zinc-900 bg-neutral-950/20 py-16">
                         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -285,7 +296,6 @@
                         </div>
                     </div>
 
-                    {}
                     {/* Main Workspace */}
                     <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
                         
@@ -337,20 +347,19 @@
                             </div>
                         </div>
 
-                        {}
-                        {/* Elegant Fallback Loader Zone (Only shown if local CORS file protection blocks direct loading) */}
+                        {/* Elegant Fallback Loader Zone (Only shown if local CORS file protection blocks direct loading or error occurs) */}
                         {error && (
-                            <div className="bg-neutral-950/60 border border-zinc-900 rounded-2xl p-8 text-center max-w-xl mx-auto my-8 shadow-soft-dark">
+                            <div className="bg-neutral-950/60 border border-zinc-900 rounded-2xl p-8 text-center max-w-xl mx-auto my-8 shadow-soft-dark animate-fade-in">
                                 <div className="h-12 w-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-4">
                                     <span className="text-zinc-400 text-lg">📁</span>
                                 </div>
                                 <h3 className="text-white font-bold text-base mb-2">טעינת קובץ הגדרות 1.json</h3>
                                 <p className="text-xs text-zinc-500 mb-6 leading-relaxed">
-                                    בשל הגדרות אבטחת דפדפן (CORS) בריצה מקומית, לא ניתן לקרוא את קובץ ה-JSON בצורה אוטומטית. אנא בחר את הקובץ <code className="text-white bg-zinc-900 px-1 py-0.5 rounded font-mono">1.json</code> ששמרת ליד קובץ ה-index.html:
+                                    {error}
                                 </p>
                                 <div className="flex justify-center">
                                     <label className="cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950 px-5 py-2.5 rounded-lg text-xs font-bold smooth-transition shadow-soft-dark">
-                                        בחר את קובץ 1.json
+                                        בחר את קובץ 1.json ידנית
                                         <input 
                                             type="file" 
                                             accept=".json" 
@@ -362,7 +371,6 @@
                             </div>
                         )}
 
-                        {}
                         {/* Card Grid - 4 items per row layout */}
                         {!loading && !error && (
                             <div>
@@ -462,7 +470,6 @@
                         )}
                     </main>
 
-                    {}
                     {/* Matte Modal Details Panel */}
                     {selectedApp && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-fade-in">
@@ -594,7 +601,6 @@
                         </div>
                     )}
 
-                    {}
                     {/* Official Matte Dark Footer */}
                     <footer className="border-t border-zinc-900 bg-neutral-950 py-8 mt-20">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
