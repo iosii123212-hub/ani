@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSS Enterprise | פורטל הפצת תוכנה וכלים רשמי</title>
+    <title>CSS Enterprise | פורטל הפצת תוכנה רשמי</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts - Rubik & JetBrains Mono -->
@@ -20,42 +20,39 @@
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.03)',
-                        'premium': '0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 15px 25px -10px rgba(15, 23, 42, 0.04)',
-                        'glow': '0 0 20px rgba(99, 102, 241, 0.15)'
+                        'soft-dark': '0 4px 20px -2px rgba(0, 0, 0, 0.7), 0 2px 8px -1px rgba(0, 0, 0, 0.5)',
+                        'premium': '0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 15px 25px -10px rgba(0, 0, 0, 0.6)'
                     }
                 }
             }
         }
     </script>
+    
     <style>
         body {
             font-family: 'Rubik', sans-serif;
-            background-color: #f8fafc; /* Sleek Slate-50 background */
-            color: #0f172a; /* Deep Slate-900 text */
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.03) 0%, transparent 35%),
-                radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.03) 0%, transparent 35%);
-            background-attachment: fixed;
+            background-color: #090a0f; /* Deep Matte Black */
+            color: #e2e8f0; /* Crisp slate-200 text */
+            overflow-x: hidden;
         }
-        /* Smooth transitions */
+        /* Elegant smooth transitions */
         .smooth-transition {
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Custom subtle scrollbar */
+        /* Matte scrollbar customization */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: #090a0f;
         }
         ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
+            background: #1e212b;
             border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            background: #2d313f;
         }
     </style>
 </head>
@@ -78,56 +75,9 @@
             const [selectedApp, setSelectedApp] = useState(null);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
-            const [showCreator, setShowCreator] = useState(false);
             const [activeModalTab, setActiveModalTab] = useState('info'); // info | security | install
-            const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
-
-            // Simulated official environment server check
-            const [serverStatus, setServerStatus] = useState({ ping: 12, load: 'תקין' });
-            useEffect(() => {
-                const interval = setInterval(() => {
-                    setServerStatus({
-                        ping: Math.floor(Math.random() * (16 - 8) + 8),
-                        load: Math.random() > 0.85 ? 'עמוס חלקית' : 'תקין'
-                    });
-                }, 5000);
-                return () => clearInterval(interval);
-            }, []);
-
-            // Helper for Toast notification instead of alert()
-            const triggerToast = (message, type = 'info') => {
-                setToast({ show: true, message, type });
-                setTimeout(() => {
-                    setToast(prev => ({ ...prev, show: false }));
-                }, 3500);
-            };
-
-            // Fetch and parse the 1.json file
-            useEffect(() => {
-                fetch('1.json')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('לא נמצא קובץ נתונים בשם 1.json ליד דף ה-HTML.');
-                        }
-                        return response.text();
-                    })
-                    .then(text => {
-                        try {
-                            const parsedData = parseCustomConfig(text);
-                            setApps(parsedData);
-                            setLoading(false);
-                        } catch (e) {
-                            setError('שגיאה בניתוח הפורמט של קובץ 1.json: ' + e.message);
-                            setLoading(false);
-                        }
-                    })
-                    .catch(err => {
-                        setError(err.message);
-                        setLoading(false);
-                    });
-            }, []);
-
-            // Custom Parser Implementation (as specified by user)
+            
+            // Custom Parser Implementation (Reads custom '<' and '-' syntax from user specification)
             const parseCustomConfig = (text) => {
                 const lines = text.split('\n').map(line => line.replace(/\r$/, '')); // Clear Windows carriage returns
                 
@@ -225,6 +175,51 @@
                 return sha;
             };
 
+            // Fetch and parse the 1.json file
+            useEffect(() => {
+                fetch('1.json')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('לא נמצא קובץ נתונים בשם 1.json ליד דף ה-HTML.');
+                        }
+                        return response.text();
+                    })
+                    .then(text => {
+                        try {
+                            const parsedData = parseCustomConfig(text);
+                            setApps(parsedData);
+                            setLoading(false);
+                        } catch (e) {
+                            setError('שגיאה בניתוח הפורמט של קובץ 1.json: ' + e.message);
+                            setLoading(false);
+                        }
+                    })
+                    .catch(err => {
+                        // Keep track of CORS / Local environment errors to show the clean Matte manual loader
+                        setError('חסימת דפדפן מקומי (CORS) או קובץ חסר. אנא טען את קובץ ה-1.json שלך ידנית למטה.');
+                        setLoading(false);
+                    });
+            }, []);
+
+            // Manual local file loader to bypass file:// browser sandbox constraints
+            const handleManualFileLoad = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsedData = parseCustomConfig(e.target.result);
+                        setApps(parsedData);
+                        setError(null);
+                        setLoading(false);
+                    } catch (err) {
+                        alert('שגיאה בניתוח קובץ ה-JSON הידני: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            };
+
             // Filter apps list
             const filteredApps = useMemo(() => {
                 if (!searchQuery) return apps;
@@ -234,71 +229,6 @@
                     app.description.toLowerCase().includes(query)
                 );
             }, [apps, searchQuery]);
-
-            // Form helper states for 1.json generation
-            const [creatorApps, setCreatorApps] = useState([
-                { name: 'הורדה מיוטיוב Pro', url: 'https://download-link-example.com', img: '1.png', desc: 'תוכנה מטורפת בהחלט להורדת סרטונים ושירים מיוטיוב במהירות שיא.\nפותח על ידי CSS.\nכולל תמיכה ברזולוציית 4K וממיר מובנה.' }
-            ]);
-
-            const addNewCreatorApp = () => {
-                setCreatorApps([...creatorApps, { name: '', url: '', img: '', desc: '' }]);
-                triggerToast('נוספה כרטיסיית תוכנה חדשה בטופס', 'success');
-            };
-
-            const updateCreatorApp = (index, field, value) => {
-                const updated = [...creatorApps];
-                updated[index][field] = value;
-                setCreatorApps(updated);
-            };
-
-            const removeCreatorApp = (index) => {
-                const updated = creatorApps.filter((_, i) => i !== index);
-                setCreatorApps(updated);
-                triggerToast('התוכנה הוסרה מהטופס', 'info');
-            };
-
-            const generatedConfigText = useMemo(() => {
-                let txt = "<\n";
-                creatorApps.forEach((app, idx) => {
-                    txt += `${app.name || 'שם תוכנה'}\n`;
-                    txt += `${app.url || 'https://link-to-download'}\n`;
-                    txt += `${app.img || 'image.png'}\n`;
-                    txt += `${app.desc || 'תיאור התוכנה'}\n`;
-                    if (idx < creatorApps.length - 1) {
-                        txt += "-\n";
-                    }
-                });
-                txt += "<";
-                return txt;
-            }, [creatorApps]);
-
-            // Fake list for live previewing the creator cards
-            const livePreviewApps = useMemo(() => {
-                return creatorApps.map((app, index) => ({
-                    id: `preview-${index}`,
-                    name: app.name || 'שם תוכנה להדגמה',
-                    downloadUrl: app.url || '#',
-                    imageName: app.img || '',
-                    description: app.desc || 'התיאור שלך יופיע כאן בלייב בזמן ההקלדה...',
-                    sha256: generateFakeSHA(app.name || 'Preview'),
-                    version: '2.0.0-Demo',
-                    downloads: 142
-                }));
-            }, [creatorApps]);
-
-            const handleCopyText = (text) => {
-                const tempTextArea = document.createElement("textarea");
-                tempTextArea.value = text;
-                document.body.appendChild(tempTextArea);
-                tempTextArea.select();
-                try {
-                    document.execCommand('copy');
-                    triggerToast("הגדרות קובץ 1.json הועתקו ללוח בהצלחה!", "success");
-                } catch (err) {
-                    triggerToast("שגיאה בהעתקה. אנא העתק ידנית.", "error");
-                }
-                document.body.removeChild(tempTextArea);
-            };
 
             const safeUrl = (url) => {
                 if (!url) return '#';
@@ -313,63 +243,25 @@
                 <div className="flex flex-col min-h-screen">
                     
                     {}
-                    {/* Global Toast Alert */}
-                    {toast.show && (
-                        <div className={`fixed top-6 left-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-premium border smooth-transition transform translate-y-0 ${
-                            toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                            toast.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' :
-                            'bg-slate-50 border-slate-200 text-slate-800'
-                        }`}>
-                            <span className="text-base">
-                                {toast.type === 'success' ? '✓' : toast.type === 'error' ? '⚠' : 'ℹ'}
-                            </span>
-                            <span className="text-sm font-medium">{toast.message}</span>
-                        </div>
-                    )}
-
-                    {/* Official Corporate Header */}
-                    <header className="border-b border-slate-200 bg-white/85 backdrop-blur-md sticky top-0 z-40">
+                    {/* Official Matte Dark Header */}
+                    <header className="border-b border-zinc-800 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-40">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                             <div className="flex items-center space-x-4 space-x-reverse">
-                                <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-lg text-white shadow-soft">
+                                <div className="h-10 w-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-lg text-white shadow-soft-dark">
                                     C
                                 </div>
                                 <div>
-                                    <h1 className="text-md font-bold tracking-tight text-slate-950 flex items-center gap-2">
-                                        CSS Enterprise <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600">v2.5 Official</span>
+                                    <h1 className="text-md font-bold tracking-tight text-white flex items-center gap-2">
+                                        CSS Enterprise <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">רשמי</span>
                                     </h1>
-                                    <p className="text-[11px] text-slate-500 font-medium">מרכז הפצה מורשה למערכות קוד פתוח וכלים</p>
+                                    <p className="text-[11px] text-zinc-500 font-medium">פורטל הפצה מורשה למערכות וכלים עצמאיים</p>
                                 </div>
-                            </div>
-
-                            {/* Official Server Status Tracker */}
-                            <div className="hidden lg:flex items-center gap-6 px-4 py-2 rounded-lg bg-slate-50 border border-slate-100 text-xs text-slate-600 font-mono">
-                                <div className="flex items-center gap-2">
-                                    <span className="relative flex h-2 w-2">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                    </span>
-                                    <span>שרת הפצה: <strong className="text-slate-800">מקוון</strong></span>
-                                </div>
-                                <div className="w-px h-3 bg-slate-200"></div>
-                                <div>עומס שרת: <strong className="text-slate-800">{serverStatus.load}</strong></div>
-                                <div className="w-px h-3 bg-slate-200"></div>
-                                <div>עכבה (Latency): <strong className="text-indigo-600">{serverStatus.ping}ms</strong></div>
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <button 
-                                    onClick={() => {
-                                        setShowCreator(!showCreator);
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }} 
-                                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-all shadow-soft"
-                                >
-                                    {showCreator ? "חזרה לפורטל" : "🛠️ מחולל קוד 1.json"}
-                                </button>
                                 <a 
                                     href="mailto:iosii123212@gmail.com"
-                                    className="px-4 py-2 text-xs font-bold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-soft"
+                                    className="px-4 py-2 text-xs font-bold rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 smooth-transition"
                                 >
                                     צור קשר
                                 </a>
@@ -378,356 +270,192 @@
                     </header>
 
                     {}
-                    {/* Modern Clean Hero Section */}
-                    {!showCreator && (
-                        <div className="bg-white border-b border-slate-200/80 py-16">
-                            <div className="max-w-5xl mx-auto px-4 text-center">
-                                <span className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/50 mb-6">
-                                    <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                    </svg>
-                                    חתימה דיגיטלית מלאה • מאובטח ונקי משגיאות
-                                </span>
-                                <h1 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-none">
-                                    הפצת תוכנה וכלים רשמיים. <span className="text-indigo-600">חלק, מהיר ומאובטח.</span>
-                                </h1>
-                                <p className="mt-5 text-base sm:text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed font-normal">
-                                    פורטל האחסון וההפצה הרשמי של מפתח המערכות <strong className="text-slate-800">CSS</strong>. כל הכלים כאן נבדקו, חתומים דיגיטלית ללא שגיאות מערכת ומוכנים להורדה ישירה.
-                                </p>
-
-                                {/* Official Statistics Board */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto mt-12 p-6 rounded-2xl bg-slate-50 border border-slate-200/60 shadow-soft">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-black text-slate-900">{apps.length}</div>
-                                        <div className="text-[11px] text-slate-500 mt-1 font-medium">תוכנות פעילות</div>
-                                    </div>
-                                    <div className="border-r border-slate-200">
-                                        <div className="text-2xl font-black text-emerald-600">Secure</div>
-                                        <div className="text-[11px] text-slate-500 mt-1 font-medium">סריקת SHA-256</div>
-                                    </div>
-                                    <div className="border-r border-slate-200">
-                                        <div className="text-2xl font-black text-indigo-600">Direct</div>
-                                        <div className="text-[11px] text-slate-500 mt-1 font-medium">שרתי הורדה ישירה</div>
-                                    </div>
-                                    <div className="border-r border-slate-200">
-                                        <div className="text-2xl font-black text-slate-900">2026</div>
-                                        <div className="text-[11px] text-slate-500 mt-1 font-medium">גרסה עדכנית ביותר</div>
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Clean Typographic Matte Hero Section */}
+                    <div className="border-b border-zinc-900 bg-neutral-950/20 py-16">
+                        <div className="max-w-4xl mx-auto px-4 text-center">
+                            <span className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-[11px] font-bold bg-zinc-900 text-zinc-300 border border-zinc-800 mb-6">
+                                חתימה דיגיטלית מלאה • מאובטח ללא שגיאות מערכת
+                            </span>
+                            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none">
+                                הפצת תוכנה וכלים רשמיים. <span className="text-zinc-400 font-normal">עצמאי, חלק ומאובטח.</span>
+                            </h1>
+                            <p className="mt-4 text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed">
+                                מרכז ההפצה והאחסון הרשמי של מפתח המערכות <strong className="text-white font-semibold">CSS</strong>. כל הכלים נבדקו, חתומים דיגיטלית ומוכנים להתקנה ישירה.
+                            </p>
                         </div>
-                    )}
+                    </div>
 
+                    {}
                     {/* Main Workspace */}
                     <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
                         
-                        {showCreator ? (
-                            /* Professional Splitscreen JSON Creator Studio */
-                            <div className="space-y-8 animate-fade-in">
-                                <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-soft">
-                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                                        <div>
-                                            <h2 className="text-xl font-bold text-slate-900">מחולל קבצי תצורה 1.json רשמי</h2>
-                                            <p className="text-xs text-slate-500 mt-1">מלא את טופס התוכנות בצד שמאל. המערכת תייצר קוד תקין וחסין שגיאות ותציג לך תצוגה מקדימה מלאה בלייב.</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleCopyText(generatedConfigText)}
-                                            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs smooth-transition shadow-soft"
-                                        >
-                                            💾 העתק קובץ מוכן ללוח
-                                        </button>
-                                    </div>
+                        {/* Search and Filters Area */}
+                        <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6 p-4 rounded-xl bg-neutral-950/40 border border-zinc-900">
+                            <div className="relative w-full md:max-w-md">
+                                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-zinc-500">
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
                                 </div>
+                                <input 
+                                    type="text" 
+                                    placeholder="חפש תוכנות, כלים, או ספריות..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-neutral-950 border border-zinc-800 rounded-lg pr-10 pl-4 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+                                />
+                                {searchQuery && (
+                                    <button 
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-500 hover:text-white"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
 
-                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-                                    {/* Left inputs column */}
-                                    <div className="xl:col-span-5 space-y-6">
-                                        <div className="flex justify-between items-center">
-                                            <h3 className="text-xs font-bold tracking-wider text-slate-400 uppercase">עריכת נתוני תוכנות</h3>
-                                            <button 
-                                                onClick={addNewCreatorApp}
-                                                className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg font-semibold transition-all"
-                                            >
-                                                + הוסף תוכנה חדשה לטופס
-                                            </button>
-                                        </div>
+                            <div className="flex items-center gap-2 w-full md:w-auto justify-end text-xs">
+                                <span className="text-zinc-500">סינון מהיר:</span>
+                                <button 
+                                    onClick={() => setSearchQuery('')}
+                                    className={`px-3 py-1.5 rounded-lg font-medium smooth-transition border ${!searchQuery ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-transparent border-zinc-900 text-zinc-500 hover:text-white'}`}
+                                >
+                                    הכל
+                                </button>
+                                <button 
+                                    onClick={() => setSearchQuery('יוטיוב')}
+                                    className={`px-3 py-1.5 rounded-lg font-medium smooth-transition border ${searchQuery === 'יוטיוב' ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-transparent border-zinc-900 text-zinc-500 hover:text-white'}`}
+                                >
+                                    יוטיוב
+                                </button>
+                                <button 
+                                    onClick={() => setSearchQuery('פייתון')}
+                                    className={`px-3 py-1.5 rounded-lg font-medium smooth-transition border ${searchQuery === 'פייתון' ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-transparent border-zinc-900 text-zinc-500 hover:text-white'}`}
+                                >
+                                    פיתוח
+                                </button>
+                            </div>
+                        </div>
 
-                                        <div className="space-y-4 max-h-[650px] overflow-y-auto pr-2">
-                                            {creatorApps.map((app, index) => (
-                                                <div key={index} className="p-5 bg-white border border-slate-200 rounded-xl relative shadow-soft">
-                                                    <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-                                                        <span className="text-xs font-mono text-slate-400 font-semibold">תוכנה #{index + 1}</span>
-                                                        <button 
-                                                            onClick={() => removeCreatorApp(index)}
-                                                            className="text-rose-500 hover:text-rose-600 text-xs font-semibold smooth-transition"
-                                                        >
-                                                            הסר מהרשימה ✕
-                                                        </button>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="block text-xs text-slate-500 mb-1">שם התוכנה</label>
-                                                            <input 
-                                                                type="text"
-                                                                value={app.name}
-                                                                onChange={(e) => updateCreatorApp(index, 'name', e.target.value)}
-                                                                placeholder="לדוגמה: כלי גיבוי"
-                                                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-xs text-slate-500 mb-1">שם קובץ תמונה</label>
-                                                            <input 
-                                                                type="text"
-                                                                value={app.img}
-                                                                onChange={(e) => updateCreatorApp(index, 'img', e.target.value)}
-                                                                placeholder="לדוגמה: 1.png"
-                                                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4">
-                                                        <label className="block text-xs text-slate-500 mb-1">קישור ישיר להורדה</label>
-                                                        <input 
-                                                            type="text"
-                                                            value={app.url}
-                                                            onChange={(e) => updateCreatorApp(index, 'url', e.target.value)}
-                                                            placeholder="https://..."
-                                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 transition-colors ltr text-left"
-                                                        />
-                                                    </div>
-
-                                                    <div className="mt-4">
-                                                        <label className="block text-xs text-slate-500 mb-1">תיאור ומידע מורחב</label>
-                                                        <textarea 
-                                                            value={app.desc}
-                                                            onChange={(e) => updateCreatorApp(index, 'desc', e.target.value)}
-                                                            placeholder="תיאור מפורט..."
-                                                            rows="4"
-                                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-indigo-500 transition-colors resize-none"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Middle preview column */}
-                                    <div className="xl:col-span-4 space-y-6">
-                                        <h3 className="text-sm font-bold tracking-wider text-slate-400 uppercase">תצוגה מקדימה באתר בלייב</h3>
-                                        <div className="grid grid-cols-1 gap-6 max-h-[650px] overflow-y-auto pr-2">
-                                            {livePreviewApps.map((app) => (
-                                                <div 
-                                                    key={app.id}
-                                                    className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-soft flex flex-col justify-between h-[360px]"
-                                                >
-                                                    <div className="relative aspect-video w-full overflow-hidden bg-slate-100 border-b border-slate-200/60 flex flex-col items-center justify-center p-4 text-center">
-                                                        <span className="text-3xl mb-1">⚙️</span>
-                                                        <span className="text-xs font-semibold text-slate-500">תמונת קובץ: {app.imageName || 'לא הוגדרה'}</span>
-                                                    </div>
-                                                    <div className="p-5 flex-grow flex flex-col justify-between">
-                                                        <div>
-                                                            <h3 className="text-sm font-bold text-slate-900 line-clamp-1">{app.name}</h3>
-                                                            <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">{app.description}</p>
-                                                        </div>
-                                                        <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                                                            <span className="text-indigo-600 font-semibold">תצוגה מקדימה ➔</span>
-                                                            <span className="text-slate-400 font-semibold px-2 py-0.5 rounded bg-slate-50 border border-slate-200">FREE</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Right output column */}
-                                    <div className="xl:col-span-3 flex flex-col h-full">
-                                        <h3 className="text-sm font-bold tracking-wider text-slate-400 uppercase mb-6">קוד המקור המוכן ל-1.json</h3>
-                                        <div className="relative flex-grow">
-                                            <pre className="w-full bg-slate-900 border border-slate-850 rounded-2xl p-4 text-[11px] font-mono text-slate-200 overflow-x-auto h-[580px] overflow-y-auto leading-relaxed shadow-premium">
-                                                {generatedConfigText}
-                                            </pre>
-                                        </div>
-                                    </div>
+                        {}
+                        {/* Elegant Fallback Loader Zone (Only shown if local CORS file protection blocks direct loading) */}
+                        {error && (
+                            <div className="bg-neutral-950/60 border border-zinc-900 rounded-2xl p-8 text-center max-w-xl mx-auto my-8 shadow-soft-dark">
+                                <div className="h-12 w-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto mb-4">
+                                    <span className="text-zinc-400 text-lg">📁</span>
+                                </div>
+                                <h3 className="text-white font-bold text-base mb-2">טעינת קובץ הגדרות 1.json</h3>
+                                <p className="text-xs text-zinc-500 mb-6 leading-relaxed">
+                                    בשל הגדרות אבטחת דפדפן (CORS) בריצה מקומית, לא ניתן לקרוא את קובץ ה-JSON בצורה אוטומטית. אנא בחר את הקובץ <code className="text-white bg-zinc-900 px-1 py-0.5 rounded font-mono">1.json</code> ששמרת ליד קובץ ה-index.html:
+                                </p>
+                                <div className="flex justify-center">
+                                    <label className="cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950 px-5 py-2.5 rounded-lg text-xs font-bold smooth-transition shadow-soft-dark">
+                                        בחר את קובץ 1.json
+                                        <input 
+                                            type="file" 
+                                            accept=".json" 
+                                            onChange={handleManualFileLoad} 
+                                            className="hidden" 
+                                        />
+                                    </label>
                                 </div>
                             </div>
-                        ) : (
-                            /* Core Catalog Workspace */
+                        )}
+
+                        {}
+                        {/* Card Grid - 4 items per row layout */}
+                        {!loading && !error && (
                             <div>
-                                {/* Filtering Controls Bar */}
-                                <div className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6 p-4 rounded-2xl bg-white border border-slate-200 shadow-soft">
-                                    <div className="relative w-full md:max-w-md">
-                                        <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                            </svg>
-                                        </div>
-                                        <input 
-                                            type="text" 
-                                            placeholder="חפש תוכנות, כלים, או ספריות..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                                        />
-                                        {searchQuery && (
-                                            <button 
-                                                onClick={() => setSearchQuery('')}
-                                                className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 hover:text-slate-600"
+                                {filteredApps.length === 0 ? (
+                                    <div className="text-center py-16 bg-neutral-950/20 border border-zinc-900 rounded-2xl max-w-md mx-auto shadow-soft-dark">
+                                        <p className="text-zinc-500 font-medium">לא נמצאו תוכנות העונות על החיפוש.</p>
+                                        <button onClick={() => setSearchQuery('')} className="mt-3 text-xs text-zinc-400 hover:underline">אפס חיפוש</button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                        {filteredApps.map((app) => (
+                                            <div 
+                                                key={app.id}
+                                                onClick={() => {
+                                                    setSelectedApp(app);
+                                                    setActiveModalTab('info');
+                                                }}
+                                                className="group bg-neutral-950 border border-zinc-900 hover:border-zinc-700 rounded-xl overflow-hidden cursor-pointer smooth-transition shadow-soft-dark flex flex-col justify-between h-[360px]"
                                             >
-                                                ✕
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
-                                        <span className="text-xs font-semibold text-slate-500">סינון:</span>
-                                        <button 
-                                            onClick={() => setSearchQuery('')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold smooth-transition border ${!searchQuery ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                        >
-                                            הכל
-                                        </button>
-                                        <button 
-                                            onClick={() => setSearchQuery('יוטיוב')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold smooth-transition border ${searchQuery === 'יוטיוב' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                        >
-                                            מדיה / וידאו
-                                        </button>
-                                        <button 
-                                            onClick={() => setSearchQuery('פייתון')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold smooth-transition border ${searchQuery === 'פייתון' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                                        >
-                                            פיתוח
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Loading state */}
-                                {loading && (
-                                    <div className="flex flex-col items-center justify-center py-24">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
-                                        <p className="text-slate-500 text-xs font-semibold">מאמת קישורי הורדה מאובטחים...</p>
-                                    </div>
-                                )}
-
-                                {/* Error handling block */}
-                                {error && (
-                                    <div className="bg-white border border-rose-100 rounded-2xl p-8 text-center max-w-xl mx-auto my-8 shadow-premium">
-                                        <div className="h-12 w-12 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-4">
-                                            <span className="text-rose-500 text-lg">⚠️</span>
-                                        </div>
-                                        <h3 className="text-rose-600 font-bold text-lg mb-2">לא נמצא קובץ נתוני תוכנות</h3>
-                                        <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                                            דף ה-HTML לא הצליח לקרוא את קובץ הארכיון <code className="text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded font-mono">1.json</code>. אנא וודא שהקובץ קיים ליד קובץ ה-index.html באותה תיקייה בדיוק.
-                                        </p>
-                                        <div className="flex justify-center gap-3">
-                                            <button 
-                                                onClick={() => setShowCreator(true)}
-                                                className="bg-slate-900 text-white hover:bg-slate-800 px-5 py-2.5 rounded-xl font-bold text-xs smooth-transition shadow-soft"
-                                            >
-                                                בנה קובץ 1.json מונחה עכשיו
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Card Grid - 4 items per row layout */}
-                                {!loading && !error && (
-                                    <div>
-                                        {filteredApps.length === 0 ? (
-                                            <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl max-w-md mx-auto shadow-soft">
-                                                <p className="text-slate-500 font-medium">לא נמצאו תוכנות או כלים העונים על החיפוש.</p>
-                                                <button onClick={() => setSearchQuery('')} className="mt-3 text-xs text-indigo-600 hover:underline font-semibold">אפס את החיפוש</button>
-                                            </div>
-                                        ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                                {filteredApps.map((app) => (
-                                                    <div 
-                                                        key={app.id}
-                                                        onClick={() => {
-                                                            setSelectedApp(app);
-                                                            setActiveModalTab('info');
-                                                        }}
-                                                        className="group bg-white border border-slate-200 hover:border-indigo-400 rounded-2xl overflow-hidden cursor-pointer smooth-transition shadow-soft hover:shadow-premium flex flex-col justify-between h-[380px]"
-                                                    >
-                                                        {/* Image container with custom status indicators */}
-                                                        <div className="relative aspect-video w-full overflow-hidden bg-slate-50 border-b border-slate-200/60">
-                                                            <img 
-                                                                src={app.imageName} 
-                                                                alt={app.name}
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.style.display = 'none';
-                                                                    e.target.parentNode.innerHTML = `
-                                                                        <div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 text-center">
-                                                                            <span class="text-3xl mb-1">⚙️</span>
-                                                                            <span class="text-[10px] font-mono font-bold tracking-wider text-slate-400">ENGINE PORT</span>
-                                                                        </div>
-                                                                    `;
-                                                                }}
-                                                                className="h-full w-full object-cover group-hover:scale-102 smooth-transition"
-                                                            />
-                                                            
-                                                            {/* Official verification status labels */}
-                                                            <div className="absolute top-3 right-3 flex gap-1.5">
-                                                                <span className="text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-soft">
-                                                                    STABLE
-                                                                </span>
-                                                                <span className="text-[9px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 shadow-soft">
-                                                                    מאומת
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Hover Overlay containing clean download controls */}
-                                                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 smooth-transition flex flex-col items-center justify-center z-10 p-4 gap-2.5">
-                                                                <a 
-                                                                    href={safeUrl(app.downloadUrl)} 
-                                                                    target="_blank" 
-                                                                    rel="noopener noreferrer"
-                                                                    onClick={(e) => e.stopPropagation()} 
-                                                                    className="w-full max-w-[150px] text-center py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-lg shadow-premium smooth-transition flex items-center justify-center gap-1.5"
-                                                                >
-                                                                    <span>הורדה ישירה</span>
-                                                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                                    </svg>
-                                                                </a>
-                                                                <button 
-                                                                    className="w-full max-w-[150px] text-center py-2 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-lg border border-slate-200 shadow-soft smooth-transition"
-                                                                >
-                                                                    מפרט מלא ➔
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* App descriptions body */}
-                                                        <div className="p-5 flex-grow flex flex-col justify-between">
-                                                            <div>
-                                                                <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 smooth-transition line-clamp-1">
-                                                                    {app.name}
-                                                                </h3>
-                                                                <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
-                                                                    {app.description}
-                                                                </p>
-                                                            </div>
-
-                                                            {/* Stats & security guarantees footer */}
-                                                            <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-                                                                <div className="flex items-center gap-1">
-                                                                    <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                                    </svg>
-                                                                    <span className="text-emerald-600 font-semibold">מאובטח ב-100%</span>
+                                                {/* Image Container with Safe fallback rendering */}
+                                                <div className="relative aspect-video w-full overflow-hidden bg-neutral-900 border-b border-zinc-900">
+                                                    <img 
+                                                        src={app.imageName} 
+                                                        alt={app.name}
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.style.display = 'none';
+                                                            e.target.parentNode.innerHTML = `
+                                                                <div class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 p-4 text-center">
+                                                                    <span class="text-3xl mb-1">⚙️</span>
+                                                                    <span class="text-[9px] font-mono font-bold tracking-widest text-zinc-600">VERIFIED PORT</span>
                                                                 </div>
-                                                                <span>הורדות: <strong className="text-slate-700 font-mono">{app.downloads}</strong></span>
-                                                            </div>
-                                                        </div>
+                                                            `;
+                                                        }}
+                                                        className="h-full w-full object-cover group-hover:scale-102 smooth-transition"
+                                                    />
+                                                    
+                                                    {/* Official Muted verification labels */}
+                                                    <div className="absolute top-3 right-3 flex gap-1.5">
+                                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-zinc-950/80 border border-zinc-800 text-zinc-300">
+                                                            STABLE
+                                                        </span>
+                                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-zinc-900/90 border border-zinc-800 text-zinc-400">
+                                                            מאומת
+                                                        </span>
                                                     </div>
-                                                ))}
+
+                                                    {/* Clean overlay trigger to display full panel details */}
+                                                    <div className="absolute inset-0 bg-neutral-950/80 opacity-0 group-hover:opacity-100 smooth-transition flex flex-col items-center justify-center z-10 p-4 gap-2">
+                                                        <a 
+                                                            href={safeUrl(app.downloadUrl)} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            onClick={(e) => e.stopPropagation()} 
+                                                            className="w-full max-w-[140px] text-center py-2 bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs rounded-md shadow-lg smooth-transition flex items-center justify-center gap-1.5"
+                                                        >
+                                                            <span>הורדה ישירה</span>
+                                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                            </svg>
+                                                        </a>
+                                                        <button 
+                                                            className="w-full max-w-[140px] text-center py-2 bg-transparent hover:bg-zinc-900 text-zinc-300 font-bold text-xs rounded-md border border-zinc-800 smooth-transition"
+                                                        >
+                                                            מפרט מלא ➔
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* App description text block */}
+                                                <div className="p-5 flex-grow flex flex-col justify-between">
+                                                    <div>
+                                                        <h3 className="text-sm font-bold text-white group-hover:text-zinc-300 smooth-transition line-clamp-1">
+                                                            {app.name}
+                                                        </h3>
+                                                        <p className="text-[11px] text-zinc-500 mt-2 line-clamp-3 leading-relaxed">
+                                                            {app.description}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Security guarantees footer */}
+                                                    <div className="pt-4 mt-4 border-t border-zinc-900 flex items-center justify-between text-[9px] text-zinc-500">
+                                                        <div className="flex items-center gap-1">
+                                                            <svg className="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                                            </svg>
+                                                            <span>מאובטח ומאושר</span>
+                                                        </div>
+                                                        <span>הורדות: <strong className="text-zinc-400 font-mono">{app.downloads}</strong></span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -735,13 +463,13 @@
                     </main>
 
                     {}
-                    {/* Highly Professional Modal Details Panel */}
+                    {/* Matte Modal Details Panel */}
                     {selectedApp && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-                            <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl overflow-hidden shadow-premium smooth-transition">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-neutral-950 border border-zinc-900 rounded-xl w-full max-w-2xl overflow-hidden shadow-premium transition-all">
                                 
                                 {/* Modal Header Banner with Image */}
-                                <div className="relative aspect-video w-full bg-slate-50 border-b border-slate-200/80">
+                                <div className="relative aspect-video w-full bg-neutral-900 border-b border-zinc-900">
                                     <img 
                                         src={selectedApp.imageName} 
                                         alt={selectedApp.name}
@@ -749,9 +477,9 @@
                                             e.target.onerror = null;
                                             e.target.style.display = 'none';
                                             e.target.parentNode.innerHTML = `
-                                                <div class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 text-center">
-                                                    <span class="text-5xl mb-2">⚙️</span>
-                                                    <span class="text-xs font-mono text-slate-400 font-semibold">CSS VERIFIED PORTAL</span>
+                                                <div class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 p-4 text-center">
+                                                    <span class="text-4xl mb-2">⚙️</span>
+                                                    <span class="text-xs font-mono text-zinc-500">CSS SECURE PLATFORM</span>
                                                 </div>
                                             `;
                                         }}
@@ -759,29 +487,29 @@
                                     />
                                     <button 
                                         onClick={() => setSelectedApp(null)}
-                                        className="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/90 border border-slate-200 flex items-center justify-center text-slate-800 hover:text-indigo-600 shadow-soft smooth-transition"
+                                        className="absolute top-4 right-4 h-8 w-8 rounded-full bg-neutral-950/85 border border-zinc-900 flex items-center justify-center text-zinc-400 hover:text-white shadow smooth-transition"
                                     >
                                         ✕
                                     </button>
                                 </div>
 
                                 {/* Modal Navigation Tabs */}
-                                <div className="border-b border-slate-200 bg-slate-50/50 px-6 flex gap-4 text-xs">
+                                <div className="border-b border-zinc-900 bg-neutral-950/40 px-6 flex gap-4 text-xs">
                                     <button 
                                         onClick={() => setActiveModalTab('info')}
-                                        className={`py-4 font-bold smooth-transition border-b-2 ${activeModalTab === 'info' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                                        className={`py-4 font-bold smooth-transition border-b-2 ${activeModalTab === 'info' ? 'border-zinc-300 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
                                     >
                                         סקירה כללית
                                     </button>
                                     <button 
                                         onClick={() => setActiveModalTab('security')}
-                                        className={`py-4 font-bold smooth-transition border-b-2 ${activeModalTab === 'security' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                                        className={`py-4 font-bold smooth-transition border-b-2 ${activeModalTab === 'security' ? 'border-zinc-300 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
                                     >
                                         חתימה דיגיטלית & אבטחה
                                     </button>
                                     <button 
                                         onClick={() => setActiveModalTab('install')}
-                                        className={`py-4 font-bold smooth-transition border-b-2 ${activeModalTab === 'install' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                                        className={`py-4 font-bold smooth-transition border-b-2 ${activeModalTab === 'install' ? 'border-zinc-300 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
                                     >
                                         הנחיות התקנה
                                     </button>
@@ -791,11 +519,11 @@
                                 <div className="p-6 sm:p-8">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                                         <div>
-                                            <h3 className="text-xl font-bold text-slate-900">{selectedApp.name}</h3>
-                                            <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500 font-mono">
+                                            <h3 className="text-lg font-bold text-white">{selectedApp.name}</h3>
+                                            <div className="flex items-center gap-2 mt-1.5 text-xs text-zinc-500 font-mono">
                                                 <span>גרסה: {selectedApp.version}</span>
-                                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                                <span>חבילה: {selectedApp.id}</span>
+                                                <span className="w-1 h-1 rounded-full bg-zinc-800"></span>
+                                                <span>קובץ: {selectedApp.id}</span>
                                             </div>
                                         </div>
                                         
@@ -803,10 +531,10 @@
                                             href={safeUrl(selectedApp.downloadUrl)} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-premium smooth-transition flex items-center justify-center gap-2"
+                                            className="w-full sm:w-auto px-5 py-2.5 bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs rounded-lg shadow smooth-transition flex items-center justify-center gap-1.5"
                                         >
                                             <span>הורד כעת</span>
-                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                             </svg>
                                         </a>
@@ -815,8 +543,8 @@
                                     {/* Tab View: General Info */}
                                     {activeModalTab === 'info' && (
                                         <div className="space-y-4">
-                                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">תיאור ופרטים נוספים</h4>
-                                            <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-h-[160px] overflow-y-auto pr-2">
+                                            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500">תיאור ופרטים נוספים</h4>
+                                            <div className="text-xs text-zinc-300 leading-relaxed whitespace-pre-wrap max-h-[160px] overflow-y-auto pr-2">
                                                 {selectedApp.description}
                                             </div>
                                         </div>
@@ -825,19 +553,19 @@
                                     {/* Tab View: Security Check */}
                                     {activeModalTab === 'security' && (
                                         <div className="space-y-4 font-mono">
-                                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
-                                                <div className="flex items-center justify-between text-[11px] border-b border-slate-200 pb-2 mb-2">
-                                                    <span className="text-emerald-600 font-bold">✓ חתימה מאומתת (CSS Security Team)</span>
-                                                    <span className="text-slate-400">SHA-256 Hash algorithm</span>
+                                            <div className="p-4 rounded-lg bg-neutral-950 border border-zinc-900 text-xs text-zinc-400 space-y-2">
+                                                <div className="flex items-center justify-between text-[11px] border-b border-zinc-900 pb-2 mb-2">
+                                                    <span className="text-zinc-300 font-bold">✓ חתימה מאומתת (CSS Security Team)</span>
+                                                    <span className="text-zinc-600">SHA-256 Hash algorithm</span>
                                                 </div>
-                                                <div className="break-all text-[11px] bg-white p-2 rounded border border-slate-200 text-indigo-600 font-bold">
+                                                <div className="break-all text-[11px] bg-neutral-950 p-2 rounded border border-zinc-900 text-zinc-400 font-bold">
                                                     {selectedApp.sha256}
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-2 text-[10px] mt-4 pt-2 text-slate-500">
-                                                    <div>מפתח רישום: <strong className="text-slate-800">CSS-ROOT-CA</strong></div>
-                                                    <div>סטטוס סריקה: <strong className="text-emerald-600">Clean (0/72)</strong></div>
-                                                    <div>אנטי-וירוס: <strong className="text-slate-800">Microsoft Defender Pass</strong></div>
-                                                    <div>חבילת רישוי: <strong className="text-slate-800">Freeware License</strong></div>
+                                                <div className="grid grid-cols-2 gap-2 text-[10px] mt-4 pt-2 text-zinc-500">
+                                                    <div>מפתח רישום: <strong className="text-white">CSS-ROOT-CA</strong></div>
+                                                    <div>סטטוס סריקה: <strong className="text-zinc-400">Clean (0/72)</strong></div>
+                                                    <div>אנטי-וירוס: <strong className="text-white">Microsoft Defender Pass</strong></div>
+                                                    <div>חבילת רישוי: <strong className="text-white">Freeware License</strong></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -845,19 +573,19 @@
 
                                     {/* Tab View: Install Manual */}
                                     {activeModalTab === 'install' && (
-                                        <div className="space-y-3 text-xs leading-relaxed text-slate-600">
-                                            <p className="font-bold text-slate-800">מדריך התקנה פשוט:</p>
+                                        <div className="space-y-3 text-xs leading-relaxed text-zinc-400">
+                                            <p className="font-bold text-zinc-300">מדריך התקנה פשוט:</p>
                                             <ul className="list-decimal list-inside space-y-1.5 pl-2">
-                                                <li>לחץ על כפתור <strong className="text-indigo-600">"הורד כעת"</strong> למעלה כדי להוריד את קובץ הריצה.</li>
-                                                <li>במידה ומופיעה אזהרת "SmartScreen" של Windows, לחץ על "מידע נוסף" (More Info) ואז על <strong className="text-slate-800">"הרץ בכל זאת" (Run Anyway)</strong>.</li>
+                                                <li>לחץ על כפתור <strong className="text-zinc-300">"הורד כעת"</strong> למעלה כדי להוריד את קובץ הריצה.</li>
+                                                <li>במידה ומופיעה אזהרת "SmartScreen" של Windows, לחץ על "מידע נוסף" (More Info) ואז על <strong className="text-white">"הרץ בכל זאת" (Run Anyway)</strong>.</li>
                                                 <li>התוכנה בטוחה לחלוטין ואינה דורשת שינויי אבטחה מיוחדים.</li>
-                                                <li>לסיוע נוסף, ניתן לפנות במייל הרשמי: <a href="mailto:iosii123212@gmail.com" className="text-indigo-600 underline">iosii123212@gmail.com</a>.</li>
+                                                <li>לסיוע נוסף, ניתן לפנות במייל הרשמי: <a href="mailto:iosii123212@gmail.com" className="text-zinc-300 underline">iosii123212@gmail.com</a>.</li>
                                             </ul>
                                         </div>
                                     )}
 
                                     {/* Footer metadata info */}
-                                    <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between text-[10px] text-slate-400 font-mono">
+                                    <div className="mt-8 pt-4 border-t border-zinc-900 flex justify-between text-[10px] text-zinc-600 font-mono">
                                         <span>פיתוח על ידי: CSS Enterprise</span>
                                         <span>שנת הפצה: 2026</span>
                                     </div>
@@ -866,21 +594,19 @@
                         </div>
                     )}
 
-                    {/* Official Corporate Footer */}
-                    <footer className="border-t border-slate-200 bg-white py-10 mt-20">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="text-center md:text-right">
-                                <span className="text-sm font-bold text-slate-900">CSS Enterprise Ecosystem &copy; 2026</span>
-                                <p className="text-xs text-slate-500 mt-1 font-medium">כל הזכויות שמורות למפתח התוכנות והכלים CSS.</p>
+                    {}
+                    {/* Official Matte Dark Footer */}
+                    <footer className="border-t border-zinc-900 bg-neutral-950 py-8 mt-20">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="text-center sm:text-right">
+                                <span className="text-xs text-zinc-500">&copy; 2026 CSS Software Hub. כל הזכויות שמורות.</span>
                             </div>
-                            
-                            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
-                                <a href="mailto:iosii123212@gmail.com" className="hover:text-indigo-600 transition-colors flex items-center gap-1.5">
+                            <div className="flex items-center gap-6 text-xs text-zinc-500">
+                                <a href="mailto:iosii123212@gmail.com" className="hover:text-white transition-colors flex items-center gap-1.5">
                                     <span>מייל רשמי: iosii123212@gmail.com</span>
                                 </a>
-                                <span className="text-slate-300">|</span>
-                                <span className="px-3 py-1 rounded bg-slate-50 border border-slate-200 text-[10px] text-emerald-700 font-mono flex items-center gap-1.5">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span className="text-zinc-800">|</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
                                     Secure CDN Active
                                 </span>
                             </div>
