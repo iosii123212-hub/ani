@@ -144,7 +144,7 @@
                             description: [],
                             sha256: '',
                             version: '2.0.1-Stable',
-                            downloads: Math.floor(Math.random() * (9500 - 450) + 450)
+                            downloads: 0
                         };
                         step = 0;
                     }
@@ -153,6 +153,8 @@
                         if (rawLine) {
                             currentItem.name = rawLine;
                             currentItem.sha256 = generateFakeSHA(rawLine);
+                            // Generate real-looking, deterministic download numbers based on seed name
+                            currentItem.downloads = generateDeterministicDownloads(rawLine);
                             step = 1;
                         }
                     } else if (step === 1) {
@@ -188,6 +190,16 @@
                     sha += chars[Math.abs((hash + i * 29) % 16)];
                 }
                 return sha;
+            };
+
+            // Generate deterministic numbers so download count is fixed and "real" per app
+            const generateDeterministicDownloads = (name) => {
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) {
+                    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                // Generate a highly realistic stable downloads number between 2,500 and 18,500 based on hash
+                return (Math.abs(hash) % 16000) + 2500;
             };
 
             // Fetch and parse the 1.json file
@@ -385,6 +397,7 @@
                             </div>
                         )}
 
+                        {}
                         {/* Card Grid - Responsive columns adapt to all device sizes */}
                         {!loading && !error && (
                             <div>
@@ -484,14 +497,15 @@
                         )}
                     </main>
 
+                    {}
                     {/* Matte Modal Details Panel - Redesigned for absolute responsive scrollability */}
                     {selectedApp && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-sm overflow-y-auto">
-                            {/* Modal container with set max-height and inner flex box layout */}
-                            <div className="bg-neutral-950 border border-zinc-900 rounded-xl w-full max-w-2xl my-auto shadow-premium transition-all overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh]">
+                        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-sm overflow-y-auto">
+                            {/* Modal container - Set to my-auto for large screens, and auto-sizing with native overflow-y scroll for robust scrolling */}
+                            <div className="bg-neutral-950 border border-zinc-900 rounded-xl w-full max-w-2xl my-4 sm:my-8 shadow-premium transition-all overflow-hidden flex flex-col">
                                 
-                                {/* Modal Header Banner with Image (Fixed height on flex, no shrink) */}
-                                <div className="relative aspect-video w-full bg-neutral-900 border-b border-zinc-900 shrink-0">
+                                {/* Modal Header Banner with Image (Responsive height, shrink-0 to prevent compression) */}
+                                <div className="relative aspect-video w-full bg-neutral-900 border-b border-zinc-900 shrink-0 overflow-hidden max-h-[180px] sm:max-h-[300px]">
                                     <img 
                                         src={selectedApp.imageName} 
                                         alt={selectedApp.name}
@@ -537,8 +551,8 @@
                                     </button>
                                 </div>
 
-                                {/* Modal Body Container (FULLY SCROLLABLE internally on all devices) */}
-                                <div className="p-5 sm:p-8 overflow-y-auto flex-grow custom-scrollbar">
+                                {/* Modal Body Container (Renders smoothly in the card flow, eliminating Safari overflow scroll clipping) */}
+                                <div className="p-5 sm:p-8 flex-grow">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                                         <div>
                                             <h3 className="text-base sm:text-lg font-bold text-white leading-tight">{selectedApp.name}</h3>
@@ -565,7 +579,7 @@
                                     {/* Tab View: General Info */}
                                     {activeModalTab === 'info' && (
                                         <div className="space-y-4">
-                                            <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-500">תיאור ופרטים נוספים</h4>
+                                            <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-500 font-mono">תיאור ופרטים נוספים</h4>
                                             <div className="text-xs sm:text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
                                                 {selectedApp.description}
                                             </div>
@@ -616,6 +630,7 @@
                         </div>
                     )}
 
+                    {}
                     {/* Official Matte Dark Footer */}
                     <footer className="border-t border-zinc-900 bg-neutral-950 py-8 mt-20">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
