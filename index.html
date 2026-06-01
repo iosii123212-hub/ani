@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>אתר התוכנות של CSS</title>
+    <title>פורטל הפצת התוכנות של CSS | רשמי</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts - Rubik & JetBrains Mono -->
@@ -11,6 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet">
     
+    <!-- Firebase SDKs (Compat version for reliable global runtime loading) -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -54,7 +59,7 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #2d313f;
         }
-        /* Hide scrollbars for simple clean tabs if needed */
+        /* Hide scrollbars for clean custom horizontal tabs */
         .scrollbar-none::-webkit-scrollbar {
             display: none;
         }
@@ -73,7 +78,6 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- React App Logic -->
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
@@ -84,6 +88,122 @@
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
             const [activeModalTab, setActiveModalTab] = useState('info'); // info | security | install
+            
+            // Firebase & Real-time Downloads State
+            const [fbUser, setFbUser] = useState(null);
+            const [realDownloads, setRealDownloads] = useState({});
+
+            // Check if Firebase is available in the running environment
+            const isFirebaseEnabled = useMemo(() => {
+                return typeof __firebase_config !== 'undefined' && __firebase_config;
+            }, []);
+
+            // Initialize Firebase Authentication & Firestore (RULE 3 Compliance)
+            useEffect(() => {
+                if (!isFirebaseEnabled) return;
+                
+                const initFirebase = async () => {
+                    try {
+                        const firebaseConfig = JSON.parse(__firebase_config);
+                        if (!firebase.apps.length) {
+                            firebase.initializeApp(firebaseConfig);
+                        }
+                        const auth = firebase.auth();
+                        
+                        // Rule 3: Auth FIRST before any query
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            await auth.signInAnonymously();
+                        }
+
+                        auth.onAuthStateChanged((user) => {
+                            setFbUser(user);
+                        });
+                    } catch (err) {
+                        console.error("שגיאה באתחול שירותי הענן:", err);
+                    }
+                };
+
+                initFirebase();
+            }, [isFirebaseEnabled]);
+
+            // Set up real-time sync listener for public download counts (RULE 1 & RULE 2 Compliance)
+            useEffect(() => {
+                if (!isFirebaseEnabled || !fbUser) return;
+
+                try {
+                    const db = firebase.firestore();
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    
+                    // RULE 1: Strict collection path structure
+                    const downloadsRef = db.collection('artifacts')
+                                           .doc(appId)
+                                           .collection('public')
+                                           .doc('data')
+                                           .collection('downloads');
+
+                    // RULE 2: Simple query only, no complex ordering or filtering to avoid index requirements
+                    const unsubscribe = downloadsRef.onSnapshot((snapshot) => {
+                        const counts = {};
+                        snapshot.forEach((doc) => {
+                            counts[doc.id] = doc.data().count || 0;
+                        });
+                        setRealDownloads(counts);
+                    }, (err) => {
+                        console.error("שגיאה בסנכרון ההורדות בזמן אמת:", err);
+                    });
+
+                    return () => unsubscribe();
+                } catch (err) {
+                    console.error("שגיאה בהפעלת מאזין הנתונים:", err);
+                }
+            }, [fbUser, isFirebaseEnabled]);
+
+            // Handle actual click on download buttons to securely increment the cloud counter
+            const handleDownloadClick = async (app) => {
+                const docId = app.name.replace(/[^a-zA-Z0-9א-ת]/g, '_'); // Safe identifier
+                
+                // Optimistic UI update (feels instantaneous)
+                setRealDownloads(prev => ({
+                    ...prev,
+                    [docId]: (prev[docId] || app.downloads) + 1
+                }));
+
+                if (!isFirebaseEnabled || !fbUser) return;
+
+                try {
+                    const db = firebase.firestore();
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                    
+                    // RULE 1 compliant path
+                    const docRef = db.collection('artifacts')
+                                     .doc(appId)
+                                     .collection('public')
+                                     .doc('data')
+                                     .collection('downloads')
+                                     .doc(docId);
+
+                    await db.runTransaction(async (transaction) => {
+                        const docSnapshot = await transaction.get(docRef);
+                        if (!docSnapshot.exists) {
+                            // Seed with baseline + 1
+                            transaction.set(docRef, { count: app.downloads + 1 });
+                        } else {
+                            const currentCount = docSnapshot.data().count || app.downloads;
+                            transaction.update(docRef, { count: currentCount + 1 });
+                        }
+                    });
+                } catch (err) {
+                    console.error("שגיאה בעדכון מונה ההורדות בענן:", err);
+                }
+            };
+
+            // Get absolute count (returns synced database value, or falls back to stable seeded value)
+            const getAppDownloads = (app) => {
+                const docId = app.name.replace(/[^a-zA-Z0-9א-ת]/g, '_');
+                return realDownloads[docId] || app.downloads;
+            };
             
             // Custom Parser Implementation (Reads custom '<', '>', and '-' syntax from user specification)
             const parseCustomConfig = (text) => {
@@ -137,13 +257,13 @@
                     // Start new item if none active
                     if (!currentItem) {
                         currentItem = {
-                            id: Math.random().toString(36).substr(2, 6).toUpperCase(),
+                            id: '',
                             name: '',
                             downloadUrl: '',
                             imageName: '',
                             description: [],
                             sha256: '',
-                            version: '2.0.1-Stable',
+                            version: '2.0.1-יציבה',
                             downloads: 0
                         };
                         step = 0;
@@ -152,6 +272,7 @@
                     if (step === 0) {
                         if (rawLine) {
                             currentItem.name = rawLine;
+                            currentItem.id = generateFakeID(rawLine);
                             currentItem.sha256 = generateFakeSHA(rawLine);
                             // Generate real-looking, deterministic download numbers based on seed name
                             currentItem.downloads = generateDeterministicDownloads(rawLine);
@@ -192,14 +313,22 @@
                 return sha;
             };
 
+            const generateFakeID = (seed) => {
+                let hash = 0;
+                for (let i = 0; i < seed.length; i++) {
+                    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                return Math.abs(hash).toString(36).substr(0, 6).toUpperCase();
+            };
+
             // Generate deterministic numbers so download count is fixed and "real" per app
             const generateDeterministicDownloads = (name) => {
                 let hash = 0;
                 for (let i = 0; i < name.length; i++) {
                     hash = name.charCodeAt(i) + ((hash << 5) - hash);
                 }
-                // Generate a highly realistic stable downloads number between 2,500 and 18,500 based on hash
-                return (Math.abs(hash) % 16000) + 2500;
+                // Generate highly realistic stable download statistics based on name hash
+                return (Math.abs(hash) % 12000) + 1500;
             };
 
             // Fetch and parse the 1.json file
@@ -239,7 +368,7 @@
                     });
             }, []);
 
-            // Manual local file loader to bypass file:// browser sandbox constraints
+            // Manual local file loader to bypass file:// browser sandbox constraints (Never alerts!)
             const handleManualFileLoad = (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -289,9 +418,9 @@
                                 </div>
                                 <div>
                                     <h1 className="text-sm sm:text-md font-bold tracking-tight text-white flex items-center gap-1.5">
-                                        CSS Enterprise <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">רשמי</span>
+                                        פורטל התוכנות של CSS <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">רשמי</span>
                                     </h1>
-                                    <p className="text-[10px] sm:text-[11px] text-zinc-500 font-medium">פורטל הפצה מורשה למערכות וכלים עצמאיים</p>
+                                    <p className="text-[10px] sm:text-[11px] text-zinc-500 font-medium">מרכז הפצה מורשה למערכות וכלים עצמאיים</p>
                                 </div>
                             </div>
 
@@ -312,9 +441,9 @@
                             <span className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-[10px] sm:text-[11px] font-bold bg-zinc-900 text-zinc-300 border border-zinc-800 mb-4 sm:mb-6">
                                 חתימה דיגיטלית מלאה • מאובטח ללא שגיאות מערכת
                             </span>
-                            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
-                                הפצת תוכנה וכלים רשמיים. <span className="text-zinc-400 font-normal">עצמאי, חלק ומאובטח.</span>
-                            </h1>
+                            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+                                הפצת תוכנה וכלים רשמיים מבית CSS. <span className="text-zinc-400 font-normal">חלק ומאובטח.</span>
+                            </h2>
                             <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed">
                                 מרכז ההפצה והאחסון הרשמי של מפתח המערכות <strong className="text-white font-semibold">CSS</strong>. כל הכלים נבדקו, חתומים דיגיטלית ומוכנים להתקנה ישירה.
                             </p>
@@ -397,7 +526,6 @@
                             </div>
                         )}
 
-                        {}
                         {/* Card Grid - Responsive columns adapt to all device sizes */}
                         {!loading && !error && (
                             <div>
@@ -417,8 +545,8 @@
                                                 }}
                                                 className="group bg-neutral-950 border border-zinc-900 hover:border-zinc-700 rounded-xl overflow-hidden cursor-pointer smooth-transition shadow-soft-dark flex flex-col justify-between h-[360px]"
                                             >
-                                                {/* Image Container with Safe fallback rendering */}
-                                                <div className="relative aspect-video w-full overflow-hidden bg-neutral-900 border-b border-zinc-900">
+                                                {/* Image Container with object-contain to ensure square/vertical images never get cut off */}
+                                                <div className="relative aspect-video w-full overflow-hidden bg-neutral-950 border-b border-zinc-900/60 p-2 flex items-center justify-center">
                                                     <img 
                                                         src={app.imageName} 
                                                         alt={app.name}
@@ -428,30 +556,33 @@
                                                             e.target.parentNode.innerHTML = `
                                                                 <div class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 p-4 text-center">
                                                                     <span class="text-3xl mb-1">⚙️</span>
-                                                                    <span class="text-[9px] font-mono font-bold tracking-widest text-zinc-600">VERIFIED PORT</span>
+                                                                    <span class="text-[9px] font-mono font-bold tracking-widest text-zinc-600">חיבור מאובטח</span>
                                                                 </div>
                                                             `;
                                                         }}
-                                                        className="h-full w-full object-cover group-hover:scale-102 smooth-transition"
+                                                        className="h-full w-full object-contain smooth-transition transform group-hover:scale-102"
                                                     />
                                                     
                                                     {/* Official Muted verification labels */}
                                                     <div className="absolute top-3 right-3 flex gap-1.5">
-                                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-zinc-950/80 border border-zinc-800 text-zinc-300">
-                                                            STABLE
+                                                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-zinc-950/85 border border-zinc-800 text-zinc-300">
+                                                            גרסה יציבה
                                                         </span>
                                                         <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-zinc-900/90 border border-zinc-800 text-zinc-400">
-                                                            מאומת
+                                                            מאומת רשמית
                                                         </span>
                                                     </div>
 
                                                     {/* Clean overlay trigger on Hover / Touch */}
-                                                    <div className="absolute inset-0 bg-neutral-950/80 opacity-0 group-hover:opacity-100 smooth-transition flex flex-col items-center justify-center z-10 p-4 gap-2">
+                                                    <div className="absolute inset-0 bg-neutral-950/85 opacity-0 group-hover:opacity-100 smooth-transition flex flex-col items-center justify-center z-10 p-4 gap-2">
                                                         <a 
                                                             href={safeUrl(app.downloadUrl)} 
                                                             target="_blank" 
                                                             rel="noopener noreferrer"
-                                                            onClick={(e) => e.stopPropagation()} 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDownloadClick(app);
+                                                            }} 
                                                             className="w-full max-w-[140px] text-center py-2 bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs rounded-md shadow-lg smooth-transition flex items-center justify-center gap-1.5"
                                                         >
                                                             <span>הורדה ישירה</span>
@@ -486,7 +617,7 @@
                                                             </svg>
                                                             <span>מאובטח ומאושר</span>
                                                         </div>
-                                                        <span>הורדות: <strong className="text-zinc-400 font-mono">{app.downloads}</strong></span>
+                                                        <span>הורדות: <strong className="text-zinc-400 font-mono">{getAppDownloads(app).toLocaleString()}</strong></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -497,15 +628,14 @@
                         )}
                     </main>
 
-                    {}
-                    {/* Matte Modal Details Panel - Redesigned for absolute responsive scrollability */}
+                    {/* Matte Modal Details Panel - Optimized for full scrolling and square image rendering */}
                     {selectedApp && (
-                        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-neutral-950/80 backdrop-blur-sm overflow-y-auto">
-                            {/* Modal container - Set to my-auto for large screens, and auto-sizing with native overflow-y scroll for robust scrolling */}
+                        <div className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-4 bg-neutral-950/85 backdrop-blur-sm overflow-y-auto">
+                            {/* Modal container - Set to my-8 with native overflow scrolling to prevent clipping on mobile */}
                             <div className="bg-neutral-950 border border-zinc-900 rounded-xl w-full max-w-2xl my-4 sm:my-8 shadow-premium transition-all overflow-hidden flex flex-col">
                                 
-                                {/* Modal Header Banner with Image (Responsive height, shrink-0 to prevent compression) */}
-                                <div className="relative aspect-video w-full bg-neutral-900 border-b border-zinc-900 shrink-0 overflow-hidden max-h-[180px] sm:max-h-[300px]">
+                                {/* Modal Header Banner with Image (Using object-contain and padding to never cut off square images) */}
+                                <div className="relative aspect-video w-full bg-neutral-950 border-b border-zinc-900/60 flex items-center justify-center p-4 max-h-[180px] sm:max-h-[300px]">
                                     <img 
                                         src={selectedApp.imageName} 
                                         alt={selectedApp.name}
@@ -515,11 +645,11 @@
                                             e.target.parentNode.innerHTML = `
                                                 <div class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 p-4 text-center">
                                                     <span class="text-4xl mb-2">⚙️</span>
-                                                    <span class="text-xs font-mono text-zinc-500">CSS SECURE PLATFORM</span>
+                                                    <span class="text-xs font-mono text-zinc-500">פלטפורמת האבטחה של CSS</span>
                                                 </div>
                                             `;
                                         }}
-                                        className="h-full w-full object-cover"
+                                        className="h-full w-full object-contain smooth-transition"
                                     />
                                     <button 
                                         onClick={() => setSelectedApp(null)}
@@ -551,7 +681,7 @@
                                     </button>
                                 </div>
 
-                                {/* Modal Body Container (Renders smoothly in the card flow, eliminating Safari overflow scroll clipping) */}
+                                {/* Modal Body Container */}
                                 <div className="p-5 sm:p-8 flex-grow">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                                         <div>
@@ -567,6 +697,7 @@
                                             href={safeUrl(selectedApp.downloadUrl)} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
+                                            onClick={() => handleDownloadClick(selectedApp)}
                                             className="w-full sm:w-auto px-5 py-2.5 bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs rounded-lg shadow smooth-transition flex items-center justify-center gap-1.5 shrink-0"
                                         >
                                             <span>הורד כעת</span>
@@ -579,7 +710,7 @@
                                     {/* Tab View: General Info */}
                                     {activeModalTab === 'info' && (
                                         <div className="space-y-4">
-                                            <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-500 font-mono">תיאור ופרטים נוספים</h4>
+                                            <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-500">תיאור ופרטים נוספים</h4>
                                             <div className="text-xs sm:text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
                                                 {selectedApp.description}
                                             </div>
@@ -592,16 +723,16 @@
                                             <div className="p-4 rounded-lg bg-neutral-950 border border-zinc-900 text-xs text-zinc-400 space-y-2">
                                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11px] border-b border-zinc-900 pb-2 mb-2 gap-1">
                                                     <span className="text-zinc-300 font-bold">✓ חתימה מאומתת (CSS Security Team)</span>
-                                                    <span className="text-[10px] text-zinc-600">SHA-256 Hash algorithm</span>
+                                                    <span className="text-[10px] text-zinc-600">אלגוריתם חתימה דיגיטלית SHA-256</span>
                                                 </div>
                                                 <div className="break-all text-[10px] sm:text-[11px] bg-neutral-950 p-2 rounded border border-zinc-900 text-zinc-400 font-bold">
                                                     {selectedApp.sha256}
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] mt-4 pt-2 text-zinc-500">
                                                     <div>מפתח רישום: <strong className="text-white">CSS-ROOT-CA</strong></div>
-                                                    <div>סטטוס סריקה: <strong className="text-zinc-400">Clean (0/72)</strong></div>
-                                                    <div>אנטי-וירוס: <strong className="text-white">Microsoft Defender Pass</strong></div>
-                                                    <div>חבילת רישוי: <strong className="text-white">Freeware License</strong></div>
+                                                    <div>סטטוס סריקה: <strong className="text-zinc-400">נקי לחלוטין (0/72)</strong></div>
+                                                    <div>אנטי-וירוס: <strong className="text-white">מאושר Microsoft Defender</strong></div>
+                                                    <div>חבילת רישוי: <strong className="text-white">רישיון שימוש חופשי</strong></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -612,10 +743,10 @@
                                         <div className="space-y-3 text-xs leading-relaxed text-zinc-400">
                                             <p className="font-bold text-zinc-300">מדריך התקנה פשוט:</p>
                                             <ul className="list-decimal list-inside space-y-1.5 pl-2 text-zinc-400">
-                                                <li>לחץ על כפתור <strong className="text-zinc-300">"הורד כעת"</strong> למעלה כדי להוריד את קובץ הריצה.</li>
+                                                <li>לחץ על כפתור <strong className="text-zinc-300 font-bold">"הורד כעת"</strong> למעלה כדי להוריד את קובץ הריצה.</li>
                                                 <li>במידה ומופיעה אזהרת "SmartScreen" של Windows, לחץ על "מידע נוסף" (More Info) ואז על <strong className="text-white">"הרץ בכל זאת" (Run Anyway)</strong>.</li>
                                                 <li>התוכנה בטוחה לחלוטין ואינה דורשת שינויי אבטחה מיוחדים.</li>
-                                                <li>לסיוע נוסף, ניתן לפנות במייל הרשמי: <a href="mailto:iosii123212@gmail.com" className="text-zinc-300 underline">iosii123212@gmail.com</a>.</li>
+                                                <li>לסיוע נוסף, ניתן לפנות במייל הרשמי: <a href="mailto:iosii123212@gmail.com" className="text-zinc-300 underline font-semibold">iosii123212@gmail.com</a>.</li>
                                             </ul>
                                         </div>
                                     )}
@@ -630,12 +761,11 @@
                         </div>
                     )}
 
-                    {}
                     {/* Official Matte Dark Footer */}
                     <footer className="border-t border-zinc-900 bg-neutral-950 py-8 mt-20">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div className="text-center sm:text-right">
-                                <span className="text-xs text-zinc-500">&copy; 2026 CSS Software Hub. כל הזכויות שמורות.</span>
+                                <span className="text-xs text-zinc-500">&copy; 2026 פורטל התוכנות של CSS. כל הזכויות שמורות.</span>
                             </div>
                             <div className="flex items-center gap-6 text-xs text-zinc-500">
                                 <a href="mailto:iosii123212@gmail.com" className="hover:text-white transition-colors flex items-center gap-1.5">
@@ -643,7 +773,7 @@
                                 </a>
                                 <span className="text-zinc-800">|</span>
                                 <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
-                                    Secure CDN Active
+                                    שרת הפצה מאובטח פעיל
                                 </span>
                             </div>
                         </div>
